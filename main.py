@@ -1,7 +1,7 @@
 from tkinter import Tk, Button, Label, StringVar, Entry, Frame, messagebox, PhotoImage
 from camera import start_camera, start_training
-from credits import get_credits
 from database import initialize_db, register_user, validate_user, get_user_credits
+import threading
 
 # Initialize the database
 initialize_db()
@@ -11,23 +11,32 @@ class IKUApp:
         self.root = root
         self.root.title("Project IKU")
         self.root.geometry("800x400")
-        self.root.configure(bg="black")  # Set background color to black
+        self.root.configure(bg="black")
+        self.user_id = None  # Initialize user_id as None
 
-        # Load the GIF frames and initialize GIF-related attributes
+        # Load the GIF frames
         self.gif_frames = self.load_gif("logo.gif")
-        self.gif_index = 0  # Initialize the GIF index
+        self.gif_index = 0
 
         # Frames
         self.login_frame = Frame(root, bg="black")
         self.main_frame = Frame(root, bg="black")
 
-        # Initialize frames
         self.create_login_frame()
         self.create_main_frame()
+        self.show_frame(self.login_frame)  # Show login initially
 
-        # Show login frame initially
+    def logout(self):
+        """Log out the current user."""
+        self.user_id = None  # Reset user_id on logout
         self.show_frame(self.login_frame)
 
+    def update_credits_label(self):
+        """Update the credits label with the user's credits."""
+        if self.user_id is not None:
+            credits = get_user_credits(self.user_id)
+            self.credits_label.set(f"Credits: {credits} IKUs")
+            
     def load_gif(self, gif_path):
         """Load all frames of a GIF for animation."""
         frames = []
@@ -98,9 +107,9 @@ class IKUApp:
         password = self.password_entry.get()
         user = validate_user(username, password)
         if user:
-            self.user_id = user[0]  # Save the logged-in user's ID
+            self.user_id = user[0]
             self.show_frame(self.main_frame)
-            self.update_credits_label()
+            self.update_credits_label()  # Now correctly updates the label
         else:
             messagebox.showerror("Login Failed", "Invalid username or password.")
 
@@ -115,21 +124,14 @@ class IKUApp:
 
     def on_start(self):
         """Start the camera."""
-        start_camera()
+        if self.user_id:
+            start_camera()  # Pass user_id if required
 
     def on_train(self):
         """Start the training process."""
-        start_training(self.user_id)
-        self.update_credits_label()
-
-    def logout(self):
-        """Log out the current user."""
-        self.show_frame(self.login_frame)
-
-    def update_credits_label(self):
-        """Update the credits label with the user's credits."""
-        credits = get_user_credits(self.user_id)
-        self.credits_label.set(f"Credits: {credits} IKUs")
+        if self.user_id:
+            start_training(self.user_id)  # Call start_training here
+            self.update_credits_label()  # Refresh credits after training
 
 # Run the application
 if __name__ == "__main__":

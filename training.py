@@ -8,8 +8,25 @@ def save_training_data(letter, path_points):
         os.makedirs(TRAINING_DIR)
 
     data_path = os.path.join(TRAINING_DIR, f"{letter}.json")
+    
+    # Check if the file already exists
+    if os.path.exists(data_path):
+        # Load existing data
+        with open(data_path, "r") as file:
+            existing_data = json.load(file)
+        
+        # Append new data to existing data
+        if isinstance(existing_data, list):
+            existing_data.append(path_points)
+        else:
+            existing_data = [existing_data, path_points]
+    else:
+        # If the file doesn't exist, start a new list with the current data
+        existing_data = [path_points]
+
+    # Save the updated data back to the file
     with open(data_path, "w") as file:
-        json.dump(path_points, file)
+        json.dump(existing_data, file)
 
 def load_training_data():
     training_data = {}
